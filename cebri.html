@@ -600,7 +600,7 @@ if(settings.backendUrl && !(settings.backendUrl.includes('localhost') && locatio
   const origin = (location.protocol === 'http:' || location.protocol === 'https:')
     ? location.origin
     : 'http://localhost:5000';
-  const defaultBackend = origin.replace(/\\/$/, '') + '/ask';
+  const defaultBackend = origin.replace(/\/$/, '') + '/ask';
   els.backendUrl.value = defaultBackend;
   els.backendLabel.textContent = 'CONFIGURED';
   els.modeLabel.textContent = 'LIVE';
@@ -853,7 +853,8 @@ if(recognizer){
   };
   recognizer.onend = ()=>{
     if(speechInProgress) return;
-    try { recognizer.start(); } catch(err) {}
+    recognitionStarted = true;
+    try { recognizer.start(); } catch(err) { recognitionStarted = false; }
   };
 }
 
@@ -863,8 +864,16 @@ function startRecognition(){
   recognitionStarted = true;
   try { recognizer.start(); } catch(err) { recognitionStarted = false; }
 }
-document.addEventListener('click', startRecognition, { once:true });
-document.addEventListener('keydown', startRecognition, { once:true });
+// Start listening automatically when the page loads (best effort; some browsers
+// require a user gesture before microphone access is granted).
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    startRecognition();
+    if(recognitionStarted) armWake();
+  }, 250);
+});
+document.addEventListener('click', () => { startRecognition(); armWake(); }, { once:true });
+document.addEventListener('keydown', () => { startRecognition(); armWake(); }, { once:true });
 
 /* ---------------- Sending / backend ---------------- */
 async function handleUserMessage(text){
