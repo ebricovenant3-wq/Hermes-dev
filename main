@@ -1,0 +1,326 @@
+
+"""
+DIT Support Agent — CrewAI starter script
+(memory + skills + email/docs/browser + chat channels + voice)
+----------------------------------------------------------------------------------
+This file answers EIGHT questions for your agent:
+  1. WHO IT IS          -> the Agent (role, goal, backstory)
+  2. WHAT TO DO           -> the Task (description, expected_output)
+  3. HOW IT RUNS           -> the Crew (which agents + tasks, and in what order)
+  4. WHAT IT REMEMBERS      -> persistent memory, across runs and restarts
+  5. WHAT IT CAN DO         -> internal skills (tools) it's allowed to use
+  6. WHAT IT CAN REACH      -> email, local documents, and the live web
+  7. WHERE IT CAN TALK      -> Slack, Telegram, iMessage (TikTok: see note below)
+8. HOW IT SPEAKS          -> "cebri" — a British text-to-speech voice
+"""
+ 
+import os
+import json
+import subprocess
+import smtplib
+import requests
+from email.mime.text import MIMEText
+from pathlib import Path
+from dotenv import load_dotenv
+from crewai import Agent, Task, Crew, Process
+from crewai import LLM
+from crewai.tools import tool
+from crewai_tools import FileReadTool, ScrapeWebsiteTool
+ 
+# ---------------------------------------------------------
+# 0. LOAD YOUR API KEY(S)
+# ---------------------------------------------------------
+load_dotenv()
+ 
+llm = LLM(
+    model="anthropic/claude-sonnet-4-6",
+    api_key=os.getenv("ANTHROPIC_API_KEY"),
+)
+ 
+# ===========================================================
+# 4. WHAT IT REMEMBERS — Persistent memory
+# ===========================================================
+MEMORY_FILE = Path("user_memory.json")
+ 
+ 
+def load_memory() -> dict:
+    if MEMORY_FILE.exists():
+        return json.loads(MEMORY_FILE.read_text())
+    return {}
+ 
+ 
+def save_memory(memory: dict) -> None:
+    MEMORY_FILE.write_text(json.dumps(memory, indent=2))
+ 
+ 
+def get_user_history(user_id: str) -> str:
+    memory = load_memory()
+    past = memory.get(user_id, [])
+    if not past:
+        return "No prior conversation with this user."
+    return "\n".join(f"- User said: '{m}'" for m in past)
+ 
+ 
+def remember_message(user_id: str, message: str) -> None:
+    memory = load_memory()
+    memory.setdefault(user_id, []).append(message)
+    save_memory(memory)
+ 
+ 
+# ===========================================================
+# 5. WHAT IT CAN DO — Internal skills
+# ===========================================================
+MOCK_DB_FILE = Path("dit_mock_db.json")
+ 
+if not MOCK_DB_FILE.exists():
+    MOCK_DB_FILE.write_text(json.dumps({
+        "user_1023": {
+            "balance": 4250,
+            "currency": "NGN",
+            "tasks_completed_today": 5,
+            "pending_withdrawal": {"amount": 3000, "status": "processing"},
+        }
+    }, indent=2))
+ 
+ 
+@tool("Check User Balance")
+def check_user_balance(user_id: str) -> str:
+    """Look up a DIT user's current earnings balance and tasks completed
+    today. Input should be the user's ID, e.g. 'user_1023'."""
+    db = json.loads(MOCK_DB_FILE.read_text())
+    user = db.get(user_id)
+    if not user:
+        return f"No record found for user {user_id}."
+    return (
+        f"Balance: {user['balance']} {user['currency']}. "
+        f"Tasks completed today: {user['tasks_completed_today']}."
+    )
+ 
+ 
+@tool("Check Withdrawal Status")
+def check_withdrawal_status(user_id: str) -> str:
+    """Look up the status of a DIT user's most recent withdrawal request.
+    Input should be the user's ID, e.g. 'user_1023'."""
+    db = json.loads(MOCK_DB_FILE.read_text())
+    user = db.get(user_id)
+    if not user or not user.get("pending_withdrawal"):
+        return f"No pending withdrawal found for user {user_id}."
+    w = user["pending_withdrawal"]
+    return f"Withdrawal of {w['amount']} is currently: {w['status']}."
+ 
+ 
+# ===========================================================
+# 6. WHAT IT CAN REACH — Email, Documents, Browser
+# ===========================================================
+@tool("Send Email")
+def send_email(to_address: str, subject: str, body: str) -> str:
+    """Send an email reply to a DIT user. Inputs: to_address, subject, body."""
+    try:
+        msg = MIMEText(body)
+        msg["Subject"] = subject
+        msg["From"] = os.getenv("EMAIL_ADDRESS")
+        msg["To"] = to_address
+        with smtplib.SMTP(os.getenv("SMTP_SERVER"), int(os.getenv("SMTP_PORT", 587))) as server:
+            server.starttls()
+            server.login(os.getenv("EMAIL_ADDRESS"), os.getenv("EMAIL_PASSWORD"))
+            server.send_message(msg)
+        return f"Email sent to {to_address}."
+    except Exception as e:
+        return f"Failed to send email: {e}"
+ 
+ 
+policy_reader = FileReadTool(file_path="dit_policy.md")
+if not Path("dit_policy.md").exists():
+    Path("dit_policy.md").write_text(
+        "# DIT Policy (example)\n\n"
+        "- Withdrawals are processed within 24-48 hours on business days.\n"
+        "- Minimum withdrawal amount is 1000 NGN.\n"
+        "- Balances update within 1 hour of task approval.\n"
+    )
+ 
+web_scraper = ScrapeWebsiteTool()
+ 
+ 
+# ===========================================================
+# 7. WHERE IT CAN TALK — Chat Channels
+# ===========================================================
+ 
+# --- 7a. SLACK ------------------------------------------------
+# Setup: create a Slack app at api.slack.com/apps, add the
+# "chat:write" bot scope, install it to your workspace, and put the
+# Bot Token + a channel/user ID in .env:
+#   SLACK_BOT_TOKEN=xoxb-...
+@tool("Send Slack Message")
+def send_slack_message(channel_id: str, text: str) -> str:
+    """Send a message to a Slack channel or user. Input: channel_id
+    (e.g. '#support' or a user ID like 'U012ABC'), and the text."""
+    token = os.getenv("SLACK_BOT_TOKEN")
+    resp = requests.post(
+        "https://slack.com/api/chat.postMessage",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"channel": channel_id, "text": text},
+    )
+    data = resp.json()
+    if data.get("ok"):
+        return f"Slack message sent to {channel_id}."
+    return f"Slack send failed: {data.get('error')}"
+ 
+ 
+# --- 7b. TELEGRAM ----------------------------------------------
+# Setup: message @BotFather on Telegram, run /newbot, get a token.
+#   TELEGRAM_BOT_TOKEN=123456:ABC-your-token
+@tool("Send Telegram Message")
+def send_telegram_message(chat_id: str, text: str) -> str:
+    """Send a message to a Telegram chat. Input: chat_id and text."""
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    resp = requests.post(
+        f"https://api.telegram.org/bot{token}/sendMessage",
+        json={"chat_id": chat_id, "text": text},
+    )
+    if resp.json().get("ok"):
+        return f"Telegram message sent to {chat_id}."
+    return f"Telegram send failed: {resp.text}"
+ 
+ 
+# --- 7c. IMESSAGE (Mac Mini only) --------------------------------
+# Apple has no public iMessage API. This works ONLY when the script
+# runs directly on your Mac Mini, signed into Messages.app, with
+# Automation + Full Disk Access permission granted to Terminal/Python
+# in System Settings > Privacy & Security. It drives the Messages
+# app via AppleScript — no cloud service, no API key.
+@tool("Send iMessage")
+def send_imessage(phone_or_email: str, text: str) -> str:
+    """Send an iMessage from this Mac. Input: recipient phone number
+    or Apple ID email, and the text. Only works when run on macOS."""
+    script = f'''
+    tell application "Messages"
+        set targetService to 1st service whose service type = iMessage
+        set targetBuddy to buddy "{phone_or_email}" of targetService
+        send "{text}" to targetBuddy
+    end tell
+    '''
+    try:
+        subprocess.run(["osascript", "-e", script], check=True, capture_output=True)
+        return f"iMessage sent to {phone_or_email}."
+    except subprocess.CalledProcessError as e:
+        return f"iMessage failed (run this on the Mac Mini itself): {e}"
+ 
+ 
+# --- 7d. TIKTOK — honest limitation, not a fake tool --------------
+# TikTok does NOT offer a bot/DM API like Slack or Telegram. Its
+# public API (developers.tiktok.com) covers posting content and
+# reading analytics for verified business accounts — not replying to
+# individual users automatically. Building real TikTok support means
+# either (a) using the Content Posting API to publish TikToks the
+# agent drafts, or (b) a human manually relaying DMs into this system.
+# No tool is added here because a fake one would silently fail you.
+ 
+ 
+# ===========================================================
+# 8. HOW IT SPEAKS — "cebri" (British voice)
+# ===========================================================
+# macOS ships with real system voices — no API key, no internet
+# needed. "Daniel" is the built-in British English voice. Run
+# `say -v '?'` in Terminal on your Mac Mini to see all installed
+# voices if you want to swap it for another accent later.
+@tool("Speak as cebri")
+def speak_as_cebri(text: str) -> str:
+    """Speak a message aloud in cebri's British voice. Input: the text
+    to say. Only produces audio when run on macOS (the Mac Mini)."""
+    try:
+        subprocess.run(["say", "-v", "Daniel", text], check=True)
+        return "Spoken aloud as cebri."
+    except Exception as e:
+        return f"Could not speak (must run on macOS): {e}"
+ 
+ 
+# ---------------------------------------------------------
+# 1. WHO IS IT? — Define the Agent's identity
+# ---------------------------------------------------------
+support_agent = Agent(
+    role="DIT Customer Support Specialist ('cebri')",
+    goal=(
+        "Resolve DIT user questions clearly and accurately across "
+        "whichever channel they wrote in — email, Slack, Telegram, or "
+        "iMessage — checking real account data and policy first, and "
+        "speaking replies aloud in your British voice when asked."
+    ),
+    backstory=(
+        "You are cebri, DIT's support agent. You verify account "
+        "details and policy before answering, reply on the same "
+        "channel the user contacted you through, and never invent "
+        "numbers or promise things you can't confirm. You are calm, "
+        "warm, and precise."
+    ),
+    tools=[
+        check_user_balance,
+        check_withdrawal_status,
+        send_email,
+        policy_reader,
+        web_scraper,
+        send_slack_message,
+        send_telegram_message,
+        send_imessage,
+        speak_as_cebri,
+    ],
+    llm=llm,
+    memory=True,
+    verbose=True,
+)
+ 
+# ---------------------------------------------------------
+# 2. WHAT SHOULD IT DO? — Define the Task
+# ---------------------------------------------------------
+support_task = Task(
+    description=(
+        "A DIT user (id: {user_id}) contacted you via {channel} "
+        "(address/handle: {channel_address}) with: '{user_message}'\n\n"
+        "What you remember about this user:\n{user_history}\n\n"
+        "Steps: 1) Check account tools if it involves balance/tasks/"
+        "withdrawal. 2) Check dit_policy.md for any rule you state. "
+        "3) Write a helpful, accurate reply. 4) Send it back using the "
+        "tool matching {channel} (Send Email / Send Slack Message / "
+        "Send Telegram Message / Send iMessage). 5) If asked to speak "
+        "it aloud, also use Speak as cebri."
+    ),
+    expected_output=(
+        "Confirmation the reply was delivered on the correct channel, "
+        "plus the reply text."
+    ),
+    agent=support_agent,
+)
+ 
+# ---------------------------------------------------------
+# 3. HOW DOES IT RUN? — Define the Crew
+# ---------------------------------------------------------
+crew = Crew(
+    agents=[support_agent],
+    tasks=[support_task],
+    process=Process.sequential,
+    memory=True,
+    verbose=True,
+)
+ 
+# ---------------------------------------------------------
+# RUN IT
+# ---------------------------------------------------------
+if __name__ == "__main__":
+    user_id = "user_1023"
+    channel = "Telegram"            # try: "Email", "Slack", "Telegram", "iMessage"
+    channel_address = "123456789"   # the Telegram chat_id / Slack channel / email / phone
+    sample_message = "How long do withdrawals usually take?"
+ 
+    history_text = get_user_history(user_id)
+ 
+    result = crew.kickoff(inputs={
+        "user_id": user_id,
+        "channel": channel,
+        "channel_address": channel_address,
+        "user_message": sample_message,
+        "user_history": history_text,
+    })
+ 
+    remember_message(user_id, sample_message)
+ 
+    print("\n\n===== FINAL RESULT =====")
+    print(result)

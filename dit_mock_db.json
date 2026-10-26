@@ -1,0 +1,11 @@
+{
+  "web_user": {
+    "balance": 4250,
+    "currency": "NGN",
+    "tasks_completed_today": 5,
+    "pending_withdrawal": {
+      "amount": 3000,
+      "status": "processing"
+    }
+  }
+}

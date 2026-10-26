@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+ven
+venv
+ENV
+
+# Secrets and local state
+env
+.env
+user_memory.json
+google_calendar_token.*
+*.token
+
+# IDE
+.vscode/

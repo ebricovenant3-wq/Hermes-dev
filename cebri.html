@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COVENANT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#05080d;
+    --void-2:#0a0f18;
+    --cyan:#3fe0ff;
+    --cyan-dim:#1c5a68;
+    --amber:#ffb238;
+    --ink:#eaf6fb;
+    --ink-dim:#7fa3b3;
+    --line: rgba(63,224,255,0.18);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(circle at 50% 38%, rgba(63,224,255,0.07), transparent 60%),
+      var(--void);
+    color:var(--ink);
+    font-family:'Space Grotesk', sans-serif;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+  }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+
+  /* ---------- Top bar ---------- */
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:22px 34px;
+    border-bottom:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .brand{
+    font-weight:700;
+    font-size:20px;
+    letter-spacing:0.12em;
+    color:var(--ink);
+  }
+  .brand span{ color:var(--cyan); }
+  .status{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--ink-dim);
+    letter-spacing:0.05em;
+  }
+  .dot{
+    width:8px; height:8px; border-radius:50%;
+    background: var(--ink-dim);
+    box-shadow: 0 0 0 rgba(63,224,255,0);
+    transition: all .3s ease;
+  }
+  .dot.online{ background:var(--cyan); box-shadow:0 0 10px var(--cyan); }
+  .dot.busy{ background:var(--amber); box-shadow:0 0 10px var(--amber); animation:blink 1s infinite; }
+  @keyframes blink{ 50%{opacity:0.3;} }
+
+  .cfg-btn{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-dim);
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.05em;
+    padding:7px 12px;
+    border-radius:2px;
+    cursor:pointer;
+    transition: all .2s;
+  }
+  .cfg-btn:hover{ border-color:var(--cyan); color:var(--cyan); }
+
+  /* ---------- Main stage ---------- */
+  main{
+    flex:1;
+    display:grid;
+    grid-template-columns: 200px 1fr 200px;
+    align-items:center;
+    min-height:0;
+  }
+  .rail{
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:26px;
+    padding:0 26px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--ink-dim);
+    letter-spacing:0.04em;
+  }
+  .rail-left{ border-right:1px solid var(--line); }
+  .rail-right{ border-left:1px solid var(--line); text-align:right; }
+  .metric-label{ color:var(--ink-dim); margin-bottom:4px; opacity:0.7;}
+  .metric-value{ color:var(--cyan); font-size:14px; }
+
+  /* ---------- Core visualizer ---------- */
+  .stage{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:100%;
+  }
+  .core-wrap{
+    position:relative;
+    width:min(46vh, 340px);
+    height:min(46vh, 340px);
+  }
+  canvas#core{ position:absolute; inset:0; width:100%; height:100%; }
+
+  .core-center{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    pointer-events:none;
+  }
+  .core-word{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.25em;
+    color:var(--cyan);
+    text-transform:uppercase;
+    opacity:0.85;
+  }
+
+  /* ---------- Transcript ---------- */
+  .transcript{
+    position:absolute;
+    bottom:170px;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(640px, 82vw);
+    max-height:120px;
+    overflow-y:auto;
+    text-align:center;
+    font-size:17px;
+    font-weight:300;
+    line-height:1.5;
+    color:var(--ink);
+  }
+  .transcript .role{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    letter-spacing:0.15em;
+    color:var(--cyan-dim);
+    margin-top:10px;
+  }
+  .transcript::-webkit-scrollbar{ width:4px; }
+  .transcript::-webkit-scrollbar-thumb{ background:var(--line); }
+
+  /* ---------- Control bar ---------- */
+  footer{
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+    padding:22px 34px 30px;
+    border-top:1px solid var(--line);
+  }
+  .mic-btn{
+    width:56px; height:56px;
+    border-radius:50%;
+    border:1px solid var(--cyan-dim);
+    background:rgba(63,224,255,0.04);
+    color:var(--cyan);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: all .2s;
+    flex-shrink:0;
+  }
+  .mic-btn:hover{ border-color:var(--cyan); background:rgba(63,224,255,0.1); }
+  .mic-btn.live{
+    background:rgba(255,178,56,0.12);
+    border-color:var(--amber);
+    color:var(--amber);
+    animation: pulse-ring 1.4s infinite;
+  }
+  @keyframes pulse-ring{
+    0%{ box-shadow:0 0 0 0 rgba(255,178,56,0.35); }
+    70%{ box-shadow:0 0 0 12px rgba(255,178,56,0); }
+    100%{ box-shadow:0 0 0 0 rgba(255,178,56,0); }
+  }
+
+  .text-input{
+    width:min(420px, 46vw);
+    background:var(--void-2);
+    border:1px solid var(--line);
+    color:var(--ink);
+    font-family:'Space Grotesk', sans-serif;
+    font-size:14px;
+    padding:14px 18px;
+    border-radius:2px;
+    outline:none;
+    transition:border-color .2s;
+  }
+  .text-input:focus{ border-color:var(--cyan-dim); }
+  .text-input::placeholder{ color:var(--ink-dim); }
+
+  .send-btn{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-dim);
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.08em;
+    padding:14px 18px;
+    border-radius:2px;
+    cursor:pointer;
+    transition: all .2s;
+  }
+  .send-btn:hover{ border-color:var(--cyan); color:var(--cyan); }
+
+  /* ---------- Settings panel ---------- */
+  .panel-overlay{
+    position:fixed; inset:0;
+    background:rgba(5,8,13,0.75);
+    backdrop-filter: blur(4px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:10;
+  }
+  .panel-overlay.open{ display:flex; }
+  .panel{
+    width:min(440px, 88vw);
+    background:var(--void-2);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:28px;
+  }
+  .panel h2{
+    font-size:14px;
+    letter-spacing:0.1em;
+    color:var(--cyan);
+    font-family:'JetBrains Mono', monospace;
+    margin-bottom:18px;
+    text-transform:uppercase;
+  }
+  .field{ margin-bottom:16px; }
+  .field label{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    color:var(--ink-dim);
+    letter-spacing:0.08em;
+    margin-bottom:6px;
+    text-transform:uppercase;
+  }
+  .field input, .field select{
+    width:100%;
+    background:var(--void);
+    border:1px solid var(--line);
+    color:var(--ink);
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    padding:10px 12px;
+    border-radius:2px;
+    outline:none;
+  }
+  .field input:focus, .field select:focus{ border-color:var(--cyan-dim); }
+  .field small{ display:block; margin-top:6px; color:var(--ink-dim); font-size:11px; line-height:1.5; }
+  .panel-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
+
+  .browser-confirm{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.65); z-index:9999; }
+  .browser-confirm.open{ display:flex; }
+  .browser-confirm-card{ background:#0b1020; border:1px solid #3fe0ff; border-radius:6px; padding:24px; max-width:420px; color:#e8f7ff; font-family:monospace; }
+  .browser-confirm-card h3{ margin:0 0 12px; color:#3fe0ff; }
+  .browser-confirm-card p{ word-break:break-all; }
+  .browser-confirm-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">COVENANT <span>// AI</span></div>
+  <div style="display:flex; align-items:center; gap:18px;">
+    <div class="status"><span class="dot online" id="statusDot"></span><span id="statusText">STANDBY</span></div>
+    <button class="cfg-btn" id="cfgOpen">CONFIGURE</button>
+  </div>
+</header>
+
+<main>
+  <div class="rail rail-left">
+    <div>
+      <div class="metric-label">VOICE</div>
+      <div class="metric-value" id="voiceLabel">— seeking —</div>
+    </div>
+    <div>
+      <div class="metric-label">CHANNEL</div>
+      <div class="metric-value">LOCAL</div>
+    </div>
+    <div>
+      <div class="metric-label">MEMORY</div>
+      <div class="metric-value" id="memCount">0 EXCHANGES</div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="core-wrap">
+      <canvas id="core" width="340" height="340"></canvas>
+      <div class="core-center">
+        <div class="core-word" id="coreWord">STANDBY</div>
+      </div>
+    </div>
+    <div class="transcript" id="transcript">
+      <span style="color:var(--ink-dim); font-size:14px;">Say something, or type below.</span>
+    </div>
+  </div>
+
+  <div class="rail rail-right">
+    <div>
+      <div class="metric-label">BACKEND</div>
+      <div class="metric-value" id="backendLabel">NOT SET</div>
+    </div>
+    <div>
+      <div class="metric-label">MODE</div>
+      <div class="metric-value" id="modeLabel">DEMO</div>
+    </div>
+    <div>
+      <div class="metric-label">LATENCY</div>
+      <div class="metric-value" id="latencyLabel">—</div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <button class="mic-btn" id="micBtn" title="Hold to talk">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3z" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M19 10v1a7 7 0 01-14 0v-1M12 18v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+  </button>
+  <input type="text" class="text-input" id="textInput" placeholder="Ask Covenant anything…">
+  <button class="send-btn" id="sendBtn">SEND</button>
+</footer>
+
+<div class="panel-overlay" id="cfgPanel">
+  <div class="panel">
+    <h2>Configuration</h2>
+    <div class="field">
+      <label>Backend URL</label>
+      <input type="text" id="backendUrl" placeholder="http://localhost:5000/ask">
+      <small>Point this at your CrewAI/Flask endpoint. Leave blank to run in demo mode with canned replies.</small>
+    </div>
+    <div class="field">
+      <label>Speech engine</label>
+      <select id="ttsProvider">
+        <option value="browser">Browser voice</option>
+        <option value="fish">Fish Audio</option>
+      </select>
+      <small>Fish Audio needs an API key in the server-side env file.</small>
+    </div>
+    <div class="field" id="nativeVoiceField">
+      <label>Browser voice</label>
+      <select id="voiceSelect"></select>
+      <small>British voices (e.g. "Daniel") are preferred automatically when available.</small>
+    </div>
+    <div class="field" id="fishVoiceField" hidden>
+      <label>Fish Audio voice ID</label>
+      <input type="text" id="fishVoiceId" placeholder="933563129e564b19a115bedd57b7406a">
+      <small>Use a voice ID from Fish Audio’s voice library.</small>
+    </div>
+    <div class="field">
+      <label>Google Calendar</label>
+      <small id="googleCalendarStatus">Checking Google Calendar connection…</small>
+      <a class="cfg-btn" id="googleCalendarConnect" href="#" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;text-decoration:none">CONNECT WITH GOOGLE</a>
+      <small>Covenant requests read-only access to events on your primary calendar. Google shows its consent screen before access is granted.</small>
+    </div>
+    <div class="field">
+      <label>YouTube</label>
+      <small id="youtubeStatus">Checking YouTube connection…</small>
+      <a class="cfg-btn" id="youtubeConnect" href="#" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;text-decoration:none">CONNECT WITH GOOGLE</a>
+      <small>Covenant requests read-only access to your YouTube channel videos.</small>
+    </div>
+    <div class="field">
+      <label>Google Contacts</label>
+      <small id="contactsStatus">Checking Google Contacts connection…</small>
+      <a class="cfg-btn" id="contactsConnect" href="#" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;text-decoration:none">CONNECT WITH GOOGLE</a>
+      <small>Covenant requests read-only access to your Google Contacts.</small>
+    </div>
+    <div class="field">
+      <label>Spotify</label>
+      <small id="spotifyStatus">Checking Spotify connection…</small>
+      <a class="cfg-btn" id="spotifyConnect" href="#" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;text-decoration:none">CONNECT WITH SPOTIFY</a>
+      <small>Covenant requests read-only access to your Spotify playlists.</small>
+    </div>
+    <div class="panel-actions">
+      <button class="cfg-btn" id="cfgClose">DONE</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="browserConfirmModal" class="browser-confirm" role="dialog" aria-modal="true" aria-labelledby="browserConfirmTitle">
+  <div class="browser-confirm-card">
+    <h3 id="browserConfirmTitle">Confirm browser action</h3>
+    <p id="browserConfirmText">Covenant wants to open a URL in your browser. Allow this action?</p>
+    <div class="browser-confirm-actions">
+      <button id="browserConfirmCancel" class="cfg-btn">CANCEL</button>
+      <button id="browserConfirmOk" class="cfg-btn">OPEN</button>
+    </div>
+  </div>
+</div>
+<script>
+/* =========================================================
+   HERMES INTERFACE
+   ---------------------------------------------------------
+   - Core visualizer: canvas rings that idle, listen, think,
+     and speak with different animation states.
+   - Voice in: Web Speech API (SpeechRecognition).
+   - Voice out: speechSynthesis, preferring a British voice.
+   - Backend: point BACKEND_URL at your own Flask/CrewAI
+     endpoint (see step 8/9 of your build). Expected contract:
+       POST { message: string }  ->  { reply: string }
+     If no backend is set, Covenant replies with demo text so
+     you can see the interface working end to end.
+========================================================= */
+
+const els = {
+  statusDot: document.getElementById('statusDot'),
+  statusText: document.getElementById('statusText'),
+  coreWord: document.getElementById('coreWord'),
+  transcript: document.getElementById('transcript'),
+  micBtn: document.getElementById('micBtn'),
+  textInput: document.getElementById('textInput'),
+  sendBtn: document.getElementById('sendBtn'),
+  cfgOpen: document.getElementById('cfgOpen'),
+  cfgClose: document.getElementById('cfgClose'),
+  cfgPanel: document.getElementById('cfgPanel'),
+  backendUrl: document.getElementById('backendUrl'),
+  backendLabel: document.getElementById('backendLabel'),
+  modeLabel: document.getElementById('modeLabel'),
+  voiceSelect: document.getElementById('voiceSelect'),
+  ttsProvider: document.getElementById('ttsProvider'),
+  nativeVoiceField: document.getElementById('nativeVoiceField'),
+  fishVoiceField: document.getElementById('fishVoiceField'),
+  fishVoiceId: document.getElementById('fishVoiceId'),
+  googleCalendarStatus: document.getElementById('googleCalendarStatus'),
+  googleCalendarConnect: document.getElementById('googleCalendarConnect'),
+  youtubeStatus: document.getElementById('youtubeStatus'),
+  youtubeConnect: document.getElementById('youtubeConnect'),
+  contactsStatus: document.getElementById('contactsStatus'),
+  contactsConnect: document.getElementById('contactsConnect'),
+  spotifyStatus: document.getElementById('spotifyStatus'),
+  spotifyConnect: document.getElementById('spotifyConnect'),
+  voiceLabel: document.getElementById('voiceLabel'),
+  memCount: document.getElementById('memCount'),
+  latencyLabel: document.getElementById('latencyLabel'),
+};
+
+let state = 'idle'; // idle | listening | thinking | speaking
+let exchanges = 0;
+let chosenVoice = null;
+
+/* ---------------- Persisted settings (this machine only) ---------------- */
+function loadSettings(){
+  try{
+    return JSON.parse(localStorage.getItem('cebri_settings') || '{}');
+  }catch{ return {}; }
+}
+function saveSettings(s){
+  try{ localStorage.setItem('cebri_settings', JSON.stringify(s)); }catch{}
+}
+let settings = loadSettings();
+els.ttsProvider.value = settings.ttsProvider || 'browser';
+els.fishVoiceId.value = settings.fishVoiceId || '933563129e564b19a115bedd57b7406a';
+function updateVoiceEngineUI(){
+  const useFish = els.ttsProvider.value === 'fish';
+  els.nativeVoiceField.hidden = useFish;
+  els.fishVoiceField.hidden = !useFish;
+  if(useFish) els.voiceLabel.textContent = 'FISH AUDIO';
+  else if(chosenVoice) els.voiceLabel.textContent = chosenVoice.name.toUpperCase();
+}
+els.ttsProvider.addEventListener('change', updateVoiceEngineUI);
+updateVoiceEngineUI();
+
+async function refreshGoogleCalendarStatus(){
+  try{
+    const backend = new URL(els.backendUrl.value.trim());
+    const statusUrl = new URL('/google-calendar/status', backend);
+    const connectUrl = new URL('/google-calendar/connect', backend);
+    els.googleCalendarConnect.href = connectUrl.href;
+    const response = await fetch(statusUrl);
+    const status = await response.json();
+    if(!status.configured){
+      els.googleCalendarStatus.textContent = 'Needs Google OAuth credentials in the env file.';
+      els.googleCalendarConnect.textContent = 'SET UP GOOGLE OAUTH';
+    }else if(status.connected){
+      els.googleCalendarStatus.textContent = 'Connected — read-only event access.';
+      els.googleCalendarConnect.textContent = 'RECONNECT GOOGLE CALENDAR';
+    }else{
+      els.googleCalendarStatus.textContent = 'Ready to connect — Google will ask you to approve read-only event access.';
+      els.googleCalendarConnect.textContent = 'CONNECT WITH GOOGLE';
+    }
+  }catch{
+    els.googleCalendarStatus.textContent = 'Covenant backend is unavailable.';
+    els.googleCalendarConnect.href = '#';
+  }
+}
+async function refreshYouTubeStatus(){
+  try{
+    const backend = new URL(els.backendUrl.value.trim());
+    const statusUrl = new URL('/youtube/status', backend);
+    const connectUrl = new URL('/youtube/connect', backend);
+    els.youtubeConnect.href = connectUrl.href;
+    const response = await fetch(statusUrl);
+    const status = await response.json();
+    if(!status.configured){
+      els.youtubeStatus.textContent = 'Needs Google OAuth credentials in the env file.';
+      els.youtubeConnect.textContent = 'SET UP GOOGLE OAUTH';
+    }else if(status.connected){
+      els.youtubeStatus.textContent = 'Connected — read-only video access.';
+      els.youtubeConnect.textContent = 'RECONNECT YOUTUBE';
+    }else{
+      els.youtubeStatus.textContent = 'Ready to connect — Google will ask you to approve read-only video access.';
+      els.youtubeConnect.textContent = 'CONNECT WITH GOOGLE';
+    }
+  }catch{
+    els.youtubeStatus.textContent = 'Covenant backend is unavailable.';
+    els.youtubeConnect.href = '#';
+  }
+}
+async function refreshContactsStatus(){
+  try{
+    const backend = new URL(els.backendUrl.value.trim());
+    const statusUrl = new URL('/contacts/status', backend);
+    const connectUrl = new URL('/contacts/connect', backend);
+    els.contactsConnect.href = connectUrl.href;
+    const response = await fetch(statusUrl);
+    const status = await response.json();
+    if(!status.configured){
+      els.contactsStatus.textContent = 'Needs Google OAuth credentials in the env file.';
+      els.contactsConnect.textContent = 'SET UP GOOGLE OAUTH';
+    }else if(status.connected){
+      els.contactsStatus.textContent = 'Connected — read-only contacts access.';
+      els.contactsConnect.textContent = 'RECONNECT CONTACTS';
+    }else{
+      els.contactsStatus.textContent = 'Ready to connect — Google will ask you to approve read-only contacts access.';
+      els.contactsConnect.textContent = 'CONNECT WITH GOOGLE';
+    }
+  }catch{
+    els.contactsStatus.textContent = 'Covenant backend is unavailable.';
+    els.contactsConnect.href = '#';
+  }
+}
+async function refreshSpotifyStatus(){
+  try{
+    const backend = new URL(els.backendUrl.value.trim());
+    const statusUrl = new URL('/spotify/status', backend);
+    const connectUrl = new URL('/spotify/connect', backend);
+    els.spotifyConnect.href = connectUrl.href;
+    const response = await fetch(statusUrl);
+    const status = await response.json();
+    if(!status.configured){
+      els.spotifyStatus.textContent = 'Needs Spotify OAuth credentials in the env file.';
+      els.spotifyConnect.textContent = 'SET UP SPOTIFY OAUTH';
+    }else if(status.connected){
+      els.spotifyStatus.textContent = 'Connected — read-only playlist access.';
+      els.spotifyConnect.textContent = 'RECONNECT SPOTIFY';
+    }else{
+      els.spotifyStatus.textContent = 'Ready to connect — Spotify will ask you to approve read-only playlist access.';
+      els.spotifyConnect.textContent = 'CONNECT WITH SPOTIFY';
+    }
+  }catch{
+    els.spotifyStatus.textContent = 'Covenant backend is unavailable.';
+    els.spotifyConnect.href = '#';
+  }
+}
+refreshGoogleCalendarStatus();
+refreshYouTubeStatus();
+refreshContactsStatus();
+refreshSpotifyStatus();
+if(settings.backendUrl && !(settings.backendUrl.includes('localhost') && location.hostname && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1')){
+  els.backendUrl.value = settings.backendUrl;
+  els.backendLabel.textContent = 'CONFIGURED';
+  els.modeLabel.textContent = 'LIVE';
+} else {
+  // Default to this server's /ask endpoint so the UI connects out-of-the-box,
+  // including when accessed through a public tunnel/deployment URL.
+  const origin = (location.protocol === 'http:' || location.protocol === 'https:')
+    ? location.origin
+    : 'http://localhost:5000';
+  const defaultBackend = origin.replace(/\\/$/, '') + '/ask';
+  els.backendUrl.value = defaultBackend;
+  els.backendLabel.textContent = 'CONFIGURED';
+  els.modeLabel.textContent = 'LIVE';
+}
+
+/* ---------------- Core visualizer (canvas) ---------------- */
+const canvas = document.getElementById('core');
+const ctx = canvas.getContext('2d');
+let t = 0;
+let amp = 0.15; // ring amplitude, driven by mic volume or synthetic pulse
+
+function resizeCanvas(){
+  const size = canvas.getBoundingClientRect().width;
+  canvas.width = size * devicePixelRatio;
+  canvas.height = size * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function colorFor(state){
+  if(state === 'listening') return '#ffb238';
+  if(state === 'speaking') return '#3fe0ff';
+  if(state === 'thinking') return '#7fa3b3';
+  return '#1c5a68';
+}
+
+function drawCore(){
+  const size = canvas.getBoundingClientRect().width;
+  const cx = size/2, cy = size/2;
+  ctx.clearRect(0,0,size,size);
+
+  const baseColor = colorFor(state);
+  const ringCount = 3;
+
+  for(let i=0; i<ringCount; i++){
+    const wobble = Math.sin(t*0.03 + i*1.3) * amp * 14;
+    const radius = size*0.22 + i*size*0.09 + wobble;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI*2);
+    ctx.strokeStyle = baseColor;
+    ctx.globalAlpha = 0.55 - i*0.14;
+    ctx.lineWidth = state === 'idle' ? 1 : 1.6;
+    ctx.stroke();
+  }
+
+  // rotating tick ring
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(t*0.01);
+  const tickRadius = size*0.40;
+  ctx.globalAlpha = 0.5;
+  for(let i=0;i<48;i++){
+    const angle = (i/48) * Math.PI*2;
+    const len = (i % 6 === 0) ? 10 : 4;
+    const x1 = Math.cos(angle)*tickRadius, y1 = Math.sin(angle)*tickRadius;
+    const x2 = Math.cos(angle)*(tickRadius+len), y2 = Math.sin(angle)*(tickRadius+len);
+    ctx.beginPath();
+    ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+    ctx.strokeStyle = baseColor;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // inner glow disc
+  const grad = ctx.createRadialGradient(cx,cy,0,cx,cy,size*0.22 + amp*20);
+  grad.addColorStop(0, baseColor + '55');
+  grad.addColorStop(1, 'transparent');
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx,cy, size*0.24 + amp*20, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.globalAlpha = 1;
+  t++;
+  requestAnimationFrame(drawCore);
+}
+drawCore();
+
+// idle amplitude breathing
+setInterval(()=>{
+  if(state === 'idle') amp = 0.12 + Math.sin(Date.now()/900)*0.05;
+  else if(state === 'thinking') amp = 0.18 + Math.random()*0.05;
+}, 60);
+
+function setState(next, label){
+  state = next;
+  els.coreWord.textContent = label || next.toUpperCase();
+  els.statusText.textContent = label || next.toUpperCase();
+  els.statusDot.className = 'dot ' + (next === 'idle' ? 'online' : 'busy');
+}
+setState('idle', 'STANDBY');
+
+/* ---------------- Transcript ---------------- */
+function addLine(role, text){
+  const roleLabel = role === 'user' ? 'YOU' : 'HERMES';
+  els.transcript.innerHTML = `${text}<span class="role">${roleLabel}</span>`;
+  if(role === 'hermes' || role === 'cebri'){
+    exchanges++;
+    els.memCount.textContent = exchanges + ' EXCHANGE' + (exchanges===1?'':'S');
+  }
+}
+
+/* ---------------- Voice output ---------------- */
+function pickBritishVoice(){
+  const voices = speechSynthesis.getVoices();
+  if(!voices.length) return null;
+  let v = voices.find(v => /Daniel/i.test(v.name)) ||
+          voices.find(v => v.lang === 'en-GB') ||
+          voices.find(v => /GB|British|UK/i.test(v.name + v.lang)) ||
+          voices[0];
+  return v;
+}
+function refreshVoiceList(){
+  const voices = speechSynthesis.getVoices();
+  els.voiceSelect.innerHTML = '';
+  voices.forEach((v,i)=>{
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = `${v.name} (${v.lang})`;
+    els.voiceSelect.appendChild(opt);
+  });
+  chosenVoice = pickBritishVoice();
+  if(chosenVoice){
+    els.voiceLabel.textContent = chosenVoice.name.toUpperCase();
+    const idx = voices.indexOf(chosenVoice);
+    if(idx >= 0) els.voiceSelect.value = idx;
+  }
+}
+speechSynthesis.onvoiceschanged = refreshVoiceList;
+refreshVoiceList();
+
+els.voiceSelect.addEventListener('change', ()=>{
+  const voices = speechSynthesis.getVoices();
+  chosenVoice = voices[els.voiceSelect.value];
+  els.voiceLabel.textContent = chosenVoice.name.toUpperCase();
+});
+
+function speakWithBrowser(text){
+  if(!('speechSynthesis' in window)){ setState('idle','STANDBY'); return; }
+  speechInProgress = true;
+  if(recognizer){ try{recognizer.stop();}catch(e){} }
+  const utter = new SpeechSynthesisUtterance(text);
+  if(chosenVoice) utter.voice = chosenVoice;
+  utter.rate = 1.0;
+  utter.pitch = 0.95;
+  utter.onstart = ()=> setState('speaking', 'SPEAKING');
+  utter.onboundary = ()=> { amp = 0.3 + Math.random()*0.25; };
+  utter.onend = ()=> { setState('idle','STANDBY'); speechInProgress = false; if(recognizer){ try{recognizer.start();}catch(e){} } };
+  utter.onerror = ()=> { setState('idle','STANDBY'); speechInProgress = false; if(recognizer){ try{recognizer.start();}catch(e){} } };
+  speechSynthesis.speak(utter);
+}
+
+async function speak(text){
+  if(els.ttsProvider.value !== 'fish') return speakWithBrowser(text);
+  speechInProgress = true;
+  if(recognizer){ try{recognizer.stop();}catch(e){} }
+  try{
+    const ttsUrl = new URL('/tts', els.backendUrl.value.trim()).href;
+    const response = await fetch(ttsUrl, {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text, voice_id:els.fishVoiceId.value.trim()})});
+    if(!response.ok){
+      const detail = await response.json().catch(()=>({}));
+      throw new Error(detail.error || `Fish Audio request failed (${response.status})`);
+    }
+    const audioUrl = URL.createObjectURL(await response.blob());
+    const audio = new Audio(audioUrl);
+    audio.onplay = ()=>setState('speaking', 'SPEAKING');
+    audio.ontimeupdate = ()=>{ amp = 0.3 + Math.random()*0.25; };
+    audio.onended = ()=>{ URL.revokeObjectURL(audioUrl); setState('idle','STANDBY'); speechInProgress = false; if(recognizer){ try{recognizer.start();}catch(e){} } };
+    audio.onerror = ()=>{ URL.revokeObjectURL(audioUrl); setState('idle','STANDBY'); speechInProgress = false; if(recognizer){ try{recognizer.start();}catch(e){} } };
+    await audio.play();
+  }catch(error){
+    console.warn('Fish Audio speech failed:', error.message);
+    speechInProgress = false;
+    if(recognizer){ try{recognizer.start();}catch(e){} }
+    setState('idle', 'FISH AUDIO ERROR');
+  }
+}
+
+/* ---------------- Voice input ---------------- */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognizer = null;
+if(SpeechRecognition){
+  recognizer = new SpeechRecognition();
+  recognizer.continuous = true;
+  recognizer.interimResults = true;
+  recognizer.maxAlternatives = 1;
+
+  recognizer.onstart = ()=>{ setState('listening', 'LISTENING'); amp = 0.3; };
+  recognizer.onresult = (e)=>{
+    const text = e.results[0][0].transcript;
+    handleUserMessage(text);
+  };
+  recognizer.onerror = ()=>{ setState('idle', 'STANDBY'); };
+  recognizer.onend = ()=>{ if(state === 'listening') setState('idle','STANDBY'); };
+} else {
+  els.micBtn.title = 'Speech recognition not supported in this browser';
+  els.micBtn.style.opacity = 0.4;
+}
+
+els.micBtn.style.display = 'flex';
+els.micBtn.title = 'Click to wake Covenant and start listening';
+els.micBtn.addEventListener('click', ()=>{
+  startRecognition();
+  armWake();
+});
+
+let wakeActive = false;
+let speechInProgress = false;
+let wakeTimer = null;
+
+function armWake(){
+  wakeActive = true;
+  setState('listening', 'LISTENING');
+  clearTimeout(wakeTimer);
+  wakeTimer = setTimeout(()=>{ wakeActive = false; setState('idle','STANDBY'); }, 8000);
+}
+
+if(recognizer){
+  recognizer.onresult = (e)=>{
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const result = e.results[i];
+      if(!result.isFinal) continue;
+      const text = result[0].transcript.trim();
+      if(!text) continue;
+      const lower = text.toLowerCase();
+      const wakeIndex = lower.indexOf('covenant');
+      if(wakeIndex !== -1){
+        const command = text.slice(wakeIndex + 'covenant'.length).replace(/^[,\s]+/, '').trim();
+        if(command){
+          wakeActive = false;
+          clearTimeout(wakeTimer);
+          handleUserMessage(command);
+        } else {
+          armWake();
+        }
+      } else if(wakeActive){
+        wakeActive = false;
+        clearTimeout(wakeTimer);
+        handleUserMessage(text);
+      }
+    }
+  };
+  recognizer.onerror = (event)=>{
+    if(event && event.error && event.error !== 'no-speech' && event.error !== 'aborted'){
+      console.warn('Speech recognition error:', event.error);
+    }
+  };
+  recognizer.onend = ()=>{
+    if(speechInProgress) return;
+    try { recognizer.start(); } catch(err) {}
+  };
+}
+
+let recognitionStarted = false;
+function startRecognition(){
+  if(recognitionStarted || !recognizer) return;
+  recognitionStarted = true;
+  try { recognizer.start(); } catch(err) { recognitionStarted = false; }
+}
+document.addEventListener('click', startRecognition, { once:true });
+document.addEventListener('keydown', startRecognition, { once:true });
+
+/* ---------------- Sending / backend ---------------- */
+async function handleUserMessage(text){
+  if(!text.trim()) return;
+  addLine('user', text);
+  setState('thinking', 'THINKING');
+  const started = performance.now();
+
+  const backendUrl = els.backendUrl.value.trim();
+  let reply;
+  try{
+    if(backendUrl){
+      const res = await fetch(backendUrl, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ message: text })
+      });
+      const data = await res.json();
+      reply = data.reply || '(No reply field in response.)';
+    } else {
+      reply = await demoReply(text);
+    }
+  }catch(err){
+    reply = `I couldn't reach the backend (${err.message}). Running in demo mode instead — set a backend URL in Configure.`;
+  }
+
+  els.latencyLabel.textContent = Math.round(performance.now()-started) + ' MS';
+  addLine('cebri', reply);
+  speak(reply);
+}
+
+function demoReply(text){
+  return new Promise(resolve=>{
+    setTimeout(()=>{
+      const lower = text.toLowerCase();
+      if(lower.includes('hello') || lower.includes('hi')) resolve("Hello! I'm Covenant, your personal AI assistant. Connect an AI provider in the env file for live answers.");
+      else resolve("I'm running in demo mode right now — connect me to your CrewAI backend in Configure to give real answers.");
+    }, 700 + Math.random()*500);
+  });
+}
+
+els.sendBtn.addEventListener('click', ()=>{
+  const text = els.textInput.value;
+  els.textInput.value = '';
+  handleUserMessage(text);
+});
+els.textInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ els.sendBtn.click(); }
+});
+
+/* ---------------- Settings panel ---------------- */
+els.cfgOpen.addEventListener('click', ()=> els.cfgPanel.classList.add('open'));
+els.cfgClose.addEventListener('click', ()=>{
+  els.cfgPanel.classList.remove('open');
+  const url = els.backendUrl.value.trim();
+  saveSettings({ backendUrl: url, ttsProvider: els.ttsProvider.value, fishVoiceId: els.fishVoiceId.value.trim() });
+  els.backendLabel.textContent = url ? 'CONFIGURED' : 'NOT SET';
+  els.modeLabel.textContent = url ? 'LIVE' : 'DEMO';
+});
+
+/* ---------------- Browser actions with user confirmation ---------------- */
+let pendingBrowserAction = null;
+const browserConfirmModal = document.getElementById('browserConfirmModal');
+const browserConfirmText = document.getElementById('browserConfirmText');
+const browserConfirmOk = document.getElementById('browserConfirmOk');
+const browserConfirmCancel = document.getElementById('browserConfirmCancel');
+
+function backendBase(){
+  const raw = (els.backendUrl && els.backendUrl.value || '').trim();
+  if(!raw) return '';
+  try { return new URL(raw).origin; } catch(e){ return raw.replace(/\/ask\/?$/, ''); }
+}
+
+function showBrowserConfirmation(url, actionId){
+  pendingBrowserAction = { url, actionId };
+  browserConfirmText.textContent = 'Covenant wants to open ' + url + ' in your browser. Allow this action?';
+  browserConfirmModal.classList.add('open');
+}
+
+function hideBrowserConfirmation(){
+  browserConfirmModal.classList.remove('open');
+  pendingBrowserAction = null;
+}
+
+async function requestBrowserAction(url){
+  const base = backendBase();
+  if(!base){
+    if(window.confirm('Open ' + url + ' in your browser?')) window.open(url, '_blank', 'noopener');
+    return;
+  }
+  try{
+    const res = await fetch(new URL('/browser-action', base).href, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url, request_confirmation: true })
+    });
+    const data = await res.json().catch(() => ({}));
+    if(res.status === 202 || data.requires_confirmation){
+      showBrowserConfirmation(data.url || url, data.action_id || null);
+    } else if(data.opened){
+      addLine('cebri', data.message || ('Opened ' + url + ' in the browser.'));
+    } else if(res.status === 400 && (data.requires_confirmation || /confirm/i.test(data.error || ''))){
+      // Backend requires explicit confirmation; ask the user locally first.
+      if(window.confirm('Covenant wants to open ' + url + ' in your browser. Allow this action?')){
+        await confirmBrowserAction(url, null);
+      } else {
+        addLine('cebri', 'Browser action cancelled.');
+      }
+    } else {
+      addLine('cebri', data.error || data.message || 'Could not complete the browser action.');
+    }
+  } catch(err){
+    if(window.confirm('Covenant wants to open ' + url + ' in your browser. Allow this action?')){
+      window.open(url, '_blank', 'noopener');
+    }
+  }
+}
+
+async function confirmBrowserAction(url, actionId){
+  const base = backendBase();
+  if(!base){
+    window.open(url, '_blank', 'noopener');
+    return;
+  }
+  try{
+    const body = actionId ? { action_id: actionId, confirmed: true } : { url: url, confirmed: true };
+    const res = await fetch(new URL('/browser-action', base).href, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    addLine('cebri', data.message || (data.opened ? ('Opened ' + (data.url || url) + ' in the browser.') : 'Could not open the browser URL.'));
+  } catch(err){
+    addLine('cebri', 'Could not reach the backend for the browser action.');
+  }
+}
+
+browserConfirmOk.addEventListener('click', async () => {
+  if(!pendingBrowserAction) return;
+  const { url, actionId } = pendingBrowserAction;
+  hideBrowserConfirmation();
+  await confirmBrowserAction(url, actionId);
+});
+browserConfirmCancel.addEventListener('click', () => {
+  hideBrowserConfirmation();
+  addLine('cebri', 'Browser action cancelled.');
+});
+
+// Optional helper for opening any URL only after explicit user confirmation.
+async function openInBrowserWithConfirmation(url){
+  if(!window.confirm('Covenant wants to open ' + url + ' in your browser. Allow this action?')){
+    addLine('cebri', 'Browser action cancelled.');
+    return false;
+  }
+  await confirmBrowserAction(url, null);
+  return true;
+}
+</script>
+</body>
+</html>
