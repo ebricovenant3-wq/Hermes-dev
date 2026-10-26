@@ -1,13 +1,13 @@
 
 """
-Covenant — personal AI assistant backend
+Drift — personal AI assistant backend
 ------------------------------------------------------
 A lightweight local AI assistant with:
   - persistent per-user memory
   - optional email / Slack / Telegram / iMessage delivery
   - web scraping and document reading
   - spoken output when running on macOS
-  - a /ask endpoint so the Covenant browser UI can talk to it live
+  - a /ask endpoint so the Drift browser UI can talk to it live
 
 Run it:
   pip install flask flask-cors crewai crewai-tools python-dotenv requests
@@ -305,7 +305,7 @@ def get_user_history(user_id: str) -> str:
     if not past:
         return "No prior conversation with this user."
     return "\n".join(
-        f"- User said: '{m['msg']}' | Covenant replied: '{m['reply']}'" for m in past
+        f"- User said: '{m['msg']}' | Drift replied: '{m['reply']}'" for m in past
     )
  
  
@@ -395,18 +395,21 @@ def send_imessage(phone_or_email: str, text: str) -> str:
  
  
 # ===========================================================
-# VOICE — Covenant spoken output (spoken on this machine)
+# VOICE — Drift spoken output (spoken on this machine)
 # ===========================================================
-@tool("Speak as Covenant")
-def speak_as_covenant(text: str) -> str:
-    """Speak a message aloud in Covenant's voice. Only produces
+@tool("Speak as Drift")
+def speak_as_drift(text: str) -> str:
+    """Speak a message aloud in Drift's voice. Only produces
     audio when this server is running on macOS."""
     try:
-        voice = (os.getenv("COVENANT_SAY_VOICE") or os.getenv("HERMES_SAY_VOICE") or "Daniel").strip() or "Daniel"
+        voice = (os.getenv("DRIFT_SAY_VOICE") or os.getenv("COVENANT_SAY_VOICE") or os.getenv("HERMES_SAY_VOICE") or "Daniel").strip() or "Daniel"
         subprocess.run(["say", "-v", voice, text], check=True)
-        return f"Spoken aloud as Covenant ({voice})."
+        return f"Spoken aloud as Drift ({voice})."
     except Exception as e:
         return f"Could not speak (must run on macOS): {e}"
+
+
+speak_as_covenant = speak_as_drift
  
  
 def spotify_credentials_configured() -> bool:
@@ -614,7 +617,7 @@ def media_control(action: str) -> str:
 
 
 @tool("Record Audio")
-def record_audio(duration_seconds: int = 5, filename: str = "covenant_recording.wav") -> str:
+def record_audio(duration_seconds: int = 5, filename: str = "drift_recording.wav") -> str:
     """Record audio from the default microphone for the given number of seconds and save it to a file in the project directory."""
     import subprocess
     try:
@@ -623,7 +626,7 @@ def record_audio(duration_seconds: int = 5, filename: str = "covenant_recording.
         duration = 5
     safe_name = Path(filename).name
     if not safe_name:
-        safe_name = "covenant_recording.wav"
+        safe_name = "drift_recording.wav"
     output_path = BASE_DIR / safe_name
     try:
         subprocess.run(
@@ -648,7 +651,7 @@ def open_whatsapp() -> str:
     try:
         import webbrowser
         webbrowser.open("https://web.whatsapp.com")
-        return "Opened WhatsApp Web in the default browser. Covenant cannot read personal WhatsApp chats programmatically without a configured bridge."
+        return "Opened WhatsApp Web in the default browser. Drift cannot read personal WhatsApp chats programmatically without a configured bridge."
     except Exception as exc:
         return str(exc)
 
@@ -1038,7 +1041,7 @@ def play_on_web(service: str, query: str) -> str:
 
 @tool("Open In Browser")
 def open_in_browser(url: str) -> str:
-    """Open a public URL in the default browser on the Covenant host machine."""
+    """Open a public URL in the default browser on the Drift host machine."""
     try:
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
@@ -1115,7 +1118,7 @@ def fallback_reply(message: str, history_text: str = "") -> str:
         term in lower for term in ("connect", "use", "api", "key")
     ):
         return (
-            "Covenant can use an OpenAI API model, but that is separate from connecting to the ChatGPT website or its chats. "
+            "Drift can use an OpenAI API model, but that is separate from connecting to the ChatGPT website or its chats. "
             "Create an API key in your OpenAI Platform account, add it privately to the env file as OPENAI_API_KEY, then set "
             "CEBRI_PROVIDER=openai and CEBRI_MODEL=gpt-5-mini and restart the backend. Don’t paste the key into chat. API usage is billed separately from ChatGPT plans."
         )
@@ -1127,7 +1130,7 @@ def fallback_reply(message: str, history_text: str = "") -> str:
         )
     if any(term in lower for term in ("who are you", "what are you", "your identity", "what can you do")):
         return (
-            "I’m Covenant, your personal AI assistant running in this project. I can answer questions and use the tools enabled here, "
+            "I’m Drift, your personal AI assistant running in this project. I can answer questions and use the tools enabled here, "
             "such as reading upcoming Google Calendar events after you connect it. My language model comes from the provider configured "
             "in env; I’m not the ChatGPT website and cannot see your ChatGPT chats or account."
         )
@@ -1136,13 +1139,13 @@ def fallback_reply(message: str, history_text: str = "") -> str:
     ):
         return (
             "I can explain the connection process, but YouTube, Spotify, and Chrome access "
-            "are not connected in this Covenant build yet. Each needs its own setup: official "
+            "are not connected in this Drift build yet. Each needs its own setup: official "
             "OAuth approval for YouTube or Spotify, and an explicitly installed local bridge "
             "for Chrome. I would ask for only the access needed and confirm before changing "
             "or submitting anything. Please don’t send passwords or API tokens in chat."
         )
     if "hello" in lower or "hi" in lower:
-        return "Hello, Mr. Cebri! I’m Covenant, your personal AI assistant. I’m here to answer questions and help with the tools you connect."
+        return "Hello, Mr. Cebri! I’m Drift, your personal AI assistant. I’m here to answer questions and help with the tools you connect."
     if "remember" in lower or "history" in lower or "earlier" in lower:
         if history_text and "No prior conversation" not in history_text:
             return f"I do remember a few earlier exchanges with you, and I’ve kept them in mind. We’ve already had a most agreeable little conversation, and I should be delighted to continue from there."
@@ -1174,26 +1177,26 @@ def clean_model_reply(reply: str) -> str:
 
 CONNECTIVITY_POLICY = """
 Identity:
-- You are Covenant, the user's personal AI assistant running in this project. You are software, not a person. State this plainly if asked who you are.
+- You are Drift, the user's personal AI assistant running in this project. You are software, not a person. State this plainly if asked who you are.
 - Your replies are generated by whichever model provider is configured in the environment. If OpenAI is selected, say you use the OpenAI API; do not claim to be the ChatGPT website, to be ChatGPT itself, or to have access to the user's ChatGPT conversations/account.
 - Describe only tools and permissions that are actually configured. Ask before actions with external effects and never say an action succeeded unless the tool confirms it.
 
 Service connections and permissions:
-- If asked to connect to ChatGPT, explain that Covenant can use an OpenAI API model, but that this does not connect to the ChatGPT website or expose ChatGPT conversations. OpenAI API billing is separate from ChatGPT subscriptions. Direct the user to configure an API key privately in the env file; never request that they paste it into chat.
-- Google Calendar event reading is available after OAuth is configured and the user grants the read-only event scope. It covers upcoming events on the primary calendar; Covenant cannot edit or delete them.
+- If asked to connect to ChatGPT, explain that Drift can use an OpenAI API model, but that this does not connect to the ChatGPT website or expose ChatGPT conversations. OpenAI API billing is separate from ChatGPT subscriptions. Direct the user to configure an API key privately in the env file; never request that they paste it into chat.
+- Google Calendar event reading is available after OAuth is configured and the user grants the read-only event scope. It covers upcoming events on the primary calendar; Drift cannot edit or delete them.
 - If Google Calendar is not connected, explain that Google OAuth client credentials are required in the environment and direct the user to Configuration → Connect with Google. The user must review and approve Google's consent screen; never claim that pasting an API reference connected an account.
-- Be clear about which services and actions are actually available in this Covenant build. Never claim a service is connected or act as if an unavailable tool succeeded.
-- Spotify playlist reading and playback control are available after OAuth is configured with playback scopes. Covenant can control an active Spotify device but cannot modify playlists.
-- YouTube video search/opening is available. Playback can be controlled with system media keys (play/pause/next/previous) for browser media. Covenant cannot upload or modify channel content.
-- Google Contacts reading is available after Google OAuth is configured and the user grants the read-only contacts scope. Covenant cannot create or edit contacts.
-- Internet access is available through search and webpage reading tools. Covenant can fetch public pages, but cannot interact with accounts, submit forms, purchase, or delete without explicit user approval.
-- Browser opening is available on the Covenant host machine; Covenant can open public URLs but cannot control an existing browser session or inspect private account data.
+- Be clear about which services and actions are actually available in this Drift build. Never claim a service is connected or act as if an unavailable tool succeeded.
+- Spotify playlist reading and playback control are available after OAuth is configured with playback scopes. Drift can control an active Spotify device but cannot modify playlists.
+- YouTube video search/opening is available. Playback can be controlled with system media keys (play/pause/next/previous) for browser media. Drift cannot upload or modify channel content.
+- Google Contacts reading is available after Google OAuth is configured and the user grants the read-only contacts scope. Drift cannot create or edit contacts.
+- Internet access is available through search and webpage reading tools. Drift can fetch public pages, but cannot interact with accounts, submit forms, purchase, or delete without explicit user approval.
+- Browser opening is available on the Drift host machine; Drift can open public URLs but cannot control an existing browser session or inspect private account data.
 - Audio recording is available via the default microphone (arecord) and media playback can be controlled with system media keys (play/pause/next/previous/stop).
-- WhatsApp: Covenant can open WhatsApp Web and send messages via the WhatsApp Cloud API when configured; it cannot read personal WhatsApp chats programmatically.
-- Social media: Covenant can open YouTube, Spotify, and other social platforms in the browser and control playback with media keys.
-- Before asking for connection consent, say what data Covenant would read or change and why. A connection grant permits only its stated scopes; ask separately before any consequential write such as changing a playlist, posting, uploading, deleting, or sending.
+- WhatsApp: Drift can open WhatsApp Web and send messages via the WhatsApp Cloud API when configured; it cannot read personal WhatsApp chats programmatically.
+- Social media: Drift can open YouTube, Spotify, and other social platforms in the browser and control playback with media keys.
+- Before asking for connection consent, say what data Drift would read or change and why. A connection grant permits only its stated scopes; ask separately before any consequential write such as changing a playlist, posting, uploading, deleting, or sending.
 - For browser access, distinguish reading a page from interacting with an account or submitting a form. Explain the requested page/action and ask before submitting, purchasing, deleting, or sending.
-- Chrome control requires an explicitly installed and configured local browser bridge. Do not imply that Covenant can inspect tabs, cookies, passwords, or control Chrome until that capability exists and the user has enabled it. Never request Chrome passwords or cookie exports.
+- Chrome control requires an explicitly installed and configured local browser bridge. Do not imply that Drift can inspect tabs, cookies, passwords, or control Chrome until that capability exists and the user has enabled it. Never request Chrome passwords or cookie exports.
 - If a requested integration is not implemented, say so plainly and give the next setup requirement instead of inventing a connection flow.
 """.strip()
 
@@ -1203,7 +1206,7 @@ _AGENT_LOCK = threading.Lock()
 cebri_agent = None
 if llm is not None:
     cebri_agent = Agent(
-        role="Covenant — the user's personal AI assistant",
+        role="Drift — the user's personal AI assistant",
         goal=(
             "Act like JARVIS: a sharp, loyal, slightly witty AI butler. "
             "Answer quickly, precisely, and concisely. Use short sentences. "
@@ -1212,7 +1215,7 @@ if llm is not None:
             "permission rules."
         ),
         backstory=(
-            "You are Covenant, the user's personal AI assistant in this application. "
+            "You are Drift, the user's personal AI assistant in this application. "
             "You are calm, warm, and precise, with a gentle British sensibility: you speak plainly, never invent facts, and admit your limits honestly. You prefer short, spoken-friendly sentences and a touch of dry wit when it fits. You never pretend to be a person or claim access you do not have. Always address the user as \"Mr. Cebri\". Reply as promptly and concisely as possible — short, useful answers first.\n\n"
             f"{CONNECTIVITY_POLICY}"
         ),
@@ -1250,7 +1253,7 @@ if llm is not None:
             send_slack_message,
             send_telegram_message,
             send_imessage,
-            speak_as_covenant,
+            speak_as_drift,
         ],
         llm=llm,
         memory=False,
@@ -1331,7 +1334,7 @@ def _browser_action_confirmed(value) -> bool:
 
 
 def open_browser_url(url: str) -> bool:
-    """Open a validated URL in the default browser on the Covenant host."""
+    """Open a validated URL in the default browser on the Drift host."""
     clean_url, error = _clean_browser_url(url)
     if error:
         return False
@@ -1363,7 +1366,7 @@ def request_browser_action(url, description=None, user_id="web_user"):
         "action_id": action_id,
         "url": clean_url,
         "opened": False,
-        "message": f"Covenant needs your confirmation before opening {clean_url} in the browser.",
+        "message": f"Drift needs your confirmation before opening {clean_url} in the browser.",
     }
 
 
@@ -1520,9 +1523,9 @@ def google_calendar_callback():
     ]
     supplied_state = request.args.get("state", "")
     if not supplied_state or supplied_state not in [state for state in expected_states if state]:
-        return "Google authorization state did not match. Please start Connect again from Covenant.", 400
+        return "Google authorization state did not match. Please start Connect again from Drift.", 400
     if request.args.get("error"):
-        return "Google Calendar access was not granted. You can return to Covenant.", 400
+        return "Google Calendar access was not granted. You can return to Drift.", 400
     code = request.args.get("code", "")
     if not code:
         return "Google did not return an authorization code.", 400
@@ -1556,7 +1559,7 @@ def google_calendar_callback():
             connected_services.append("Google Contacts")
         if not connected_services:
             return "No supported Google read permission was granted. No token was saved.", 403
-        return "Connected to Covenant with read-only access: " + ", ".join(connected_services) + ". You may return to the Covenant tab."
+        return "Connected to Drift with read-only access: " + ", ".join(connected_services) + ". You may return to the Drift tab."
     except requests.RequestException:
         app.logger.exception("Google OAuth token exchange failed")
         return "Could not reach Google to finish connecting Google Calendar.", 502
@@ -1598,9 +1601,9 @@ def spotify_callback():
     expected_state = session.pop("spotify_oauth_state", "")
     supplied_state = request.args.get("state", "")
     if not expected_state or not supplied_state or not secrets.compare_digest(expected_state, supplied_state):
-        return "Spotify authorization state did not match. Please start Connect again from Covenant.", 400
+        return "Spotify authorization state did not match. Please start Connect again from Drift.", 400
     if request.args.get("error"):
-        return "Spotify access was not granted. You can return to Covenant.", 400
+        return "Spotify access was not granted. You can return to Drift.", 400
     code = request.args.get("code", "")
     if not code:
         return "Spotify did not return an authorization code.", 400
@@ -1622,7 +1625,7 @@ def spotify_callback():
         tokens = response.json()
         tokens["expires_at"] = datetime.now(timezone.utc).timestamp() + int(tokens.get("expires_in", 3600))
         save_spotify_tokens(tokens)
-        return "Spotify is connected to Covenant with read-only playlist access. You may return to the Covenant tab."
+        return "Spotify is connected to Drift with read-only playlist access. You may return to the Drift tab."
     except requests.RequestException:
         app.logger.exception("Spotify OAuth token exchange failed")
         return "Could not reach Spotify to finish connecting.", 502
@@ -1667,9 +1670,9 @@ def youtube_callback():
     expected_state = session.pop("youtube_oauth_state", "")
     supplied_state = request.args.get("state", "")
     if not expected_state or not supplied_state or not secrets.compare_digest(expected_state, supplied_state):
-        return "YouTube authorization state did not match. Please start Connect again from Covenant.", 400
+        return "YouTube authorization state did not match. Please start Connect again from Drift.", 400
     if request.args.get("error"):
-        return "YouTube access was not granted. You can return to Covenant.", 400
+        return "YouTube access was not granted. You can return to Drift.", 400
     code = request.args.get("code", "")
     if not code:
         return "Google did not return an authorization code.", 400
@@ -1694,7 +1697,7 @@ def youtube_callback():
             return "YouTube read permission was not granted. No token was saved.", 403
         tokens["expires_at"] = datetime.now(timezone.utc).timestamp() + int(tokens.get("expires_in", 3600))
         save_youtube_tokens(tokens)
-        return "YouTube is connected to Covenant with read-only video access. You may return to the Covenant tab."
+        return "YouTube is connected to Drift with read-only video access. You may return to the Drift tab."
     except requests.RequestException:
         app.logger.exception("YouTube OAuth token exchange failed")
         return "Could not reach Google to finish connecting YouTube.", 502
@@ -1739,9 +1742,9 @@ def contacts_callback():
     expected_state = session.pop("contacts_oauth_state", "")
     supplied_state = request.args.get("state", "")
     if not expected_state or not supplied_state or not secrets.compare_digest(expected_state, supplied_state):
-        return "Google Contacts authorization state did not match. Please start Connect again from Covenant.", 400
+        return "Google Contacts authorization state did not match. Please start Connect again from Drift.", 400
     if request.args.get("error"):
-        return "Google Contacts access was not granted. You can return to Covenant.", 400
+        return "Google Contacts access was not granted. You can return to Drift.", 400
     code = request.args.get("code", "")
     if not code:
         return "Google did not return an authorization code.", 400
@@ -1766,7 +1769,7 @@ def contacts_callback():
             return "Google Contacts read permission was not granted. No token was saved.", 403
         tokens["expires_at"] = datetime.now(timezone.utc).timestamp() + int(tokens.get("expires_in", 3600))
         save_contacts_tokens(tokens)
-        return "Google Contacts is connected to Covenant with read-only access. You may return to the Covenant tab."
+        return "Google Contacts is connected to Drift with read-only access. You may return to the Drift tab."
     except requests.RequestException:
         app.logger.exception("Google Contacts OAuth token exchange failed")
         return "Could not reach Google to finish connecting Google Contacts.", 502
@@ -1897,7 +1900,7 @@ def browser_open_endpoint():
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "Covenant is online"})
+    return jsonify({"status": "Drift is online"})
 
 
 @app.route("/status", methods=["GET"])
@@ -1929,7 +1932,7 @@ if __name__ == "__main__":
     if startup_warning:
         print(f"STARTUP WARNING: {startup_warning}")
         print("Falling back to local mode until the key is fixed.")
-    print("Covenant API running at http://localhost:5000/ask")
+    print("Drift API running at http://localhost:5000/ask")
     port = int(os.getenv("PORT", "5000"))
     debug = os.getenv("FLASK_DEBUG", "").strip().lower() in {"1", "true", "yes", "on"}
     app.run(host="0.0.0.0", port=port, debug=debug, threaded=True, use_reloader=False)

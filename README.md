@@ -1,6 +1,6 @@
-# Covenant (Hermes)
+# Drift (Hermes)
 
-Lightweight Flask + CrewAI backend and browser UI for the Covenant personal assistant.
+Lightweight Flask + CrewAI backend and browser UI for the Drift personal assistant.
 
 ## Run
 

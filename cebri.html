@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COVENANT</title>
+<title>DRIFT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -292,7 +292,7 @@
 <body>
 
 <header>
-  <div class="brand">COVENANT <span>// AI</span></div>
+  <div class="brand">DRIFT <span>// AI</span></div>
   <div style="display:flex; align-items:center; gap:18px;">
     <div class="status"><span class="dot online" id="statusDot"></span><span id="statusText">STANDBY</span></div>
     <button class="cfg-btn" id="cfgOpen">CONFIGURE</button>
@@ -350,7 +350,7 @@
       <path d="M19 10v1a7 7 0 01-14 0v-1M12 18v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
     </svg>
   </button>
-  <input type="text" class="text-input" id="textInput" placeholder="Ask Covenant anything…">
+  <input type="text" class="text-input" id="textInput" placeholder="Ask Drift anything…">
   <button class="send-btn" id="sendBtn">SEND</button>
 </footer>
 
@@ -384,25 +384,25 @@
       <label>Google Calendar</label>
       <small id="googleCalendarStatus">Checking Google Calendar connection…</small>
       <a class="cfg-btn" id="googleCalendarConnect" href="#" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;text-decoration:none">CONNECT WITH GOOGLE</a>
-      <small>Covenant requests read-only access to events on your primary calendar. Google shows its consent screen before access is granted.</small>
+      <small>Drift requests read-only access to events on your primary calendar. Google shows its consent screen before access is granted.</small>
     </div>
     <div class="field">
       <label>YouTube</label>
       <small id="youtubeStatus">Checking YouTube connection…</small>
       <a class="cfg-btn" id="youtubeConnect" href="#" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;text-decoration:none">CONNECT WITH GOOGLE</a>
-      <small>Covenant requests read-only access to your YouTube channel videos.</small>
+      <small>Drift requests read-only access to your YouTube channel videos.</small>
     </div>
     <div class="field">
       <label>Google Contacts</label>
       <small id="contactsStatus">Checking Google Contacts connection…</small>
       <a class="cfg-btn" id="contactsConnect" href="#" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;text-decoration:none">CONNECT WITH GOOGLE</a>
-      <small>Covenant requests read-only access to your Google Contacts.</small>
+      <small>Drift requests read-only access to your Google Contacts.</small>
     </div>
     <div class="field">
       <label>Spotify</label>
       <small id="spotifyStatus">Checking Spotify connection…</small>
       <a class="cfg-btn" id="spotifyConnect" href="#" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;text-decoration:none">CONNECT WITH SPOTIFY</a>
-      <small>Covenant requests read-only access to your Spotify playlists.</small>
+      <small>Drift requests read-only access to your Spotify playlists.</small>
     </div>
     <div class="panel-actions">
       <button class="cfg-btn" id="cfgClose">DONE</button>
@@ -414,7 +414,7 @@
 <div id="browserConfirmModal" class="browser-confirm" role="dialog" aria-modal="true" aria-labelledby="browserConfirmTitle">
   <div class="browser-confirm-card">
     <h3 id="browserConfirmTitle">Confirm browser action</h3>
-    <p id="browserConfirmText">Covenant wants to open a URL in your browser. Allow this action?</p>
+    <p id="browserConfirmText">Drift wants to open a URL in your browser. Allow this action?</p>
     <div class="browser-confirm-actions">
       <button id="browserConfirmCancel" class="cfg-btn">CANCEL</button>
       <button id="browserConfirmOk" class="cfg-btn">OPEN</button>
@@ -423,7 +423,7 @@
 </div>
 <script>
 /* =========================================================
-   HERMES INTERFACE
+   DRIFT INTERFACE
    ---------------------------------------------------------
    - Core visualizer: canvas rings that idle, listen, think,
      and speak with different animation states.
@@ -432,7 +432,7 @@
    - Backend: point BACKEND_URL at your own Flask/CrewAI
      endpoint (see step 8/9 of your build). Expected contract:
        POST { message: string }  ->  { reply: string }
-     If no backend is set, Covenant replies with demo text so
+     If no backend is set, Drift replies with demo text so
      you can see the interface working end to end.
 ========================================================= */
 
@@ -475,11 +475,11 @@ let chosenVoice = null;
 /* ---------------- Persisted settings (this machine only) ---------------- */
 function loadSettings(){
   try{
-    return JSON.parse(localStorage.getItem('cebri_settings') || '{}');
+    return JSON.parse(localStorage.getItem('drift_settings') || '{}');
   }catch{ return {}; }
 }
 function saveSettings(s){
-  try{ localStorage.setItem('cebri_settings', JSON.stringify(s)); }catch{}
+  try{ localStorage.setItem('drift_settings', JSON.stringify(s)); }catch{}
 }
 let settings = loadSettings();
 els.ttsProvider.value = settings.ttsProvider || 'browser';
@@ -513,7 +513,7 @@ async function refreshGoogleCalendarStatus(){
       els.googleCalendarConnect.textContent = 'CONNECT WITH GOOGLE';
     }
   }catch{
-    els.googleCalendarStatus.textContent = 'Covenant backend is unavailable.';
+    els.googleCalendarStatus.textContent = 'Drift backend is unavailable.';
     els.googleCalendarConnect.href = '#';
   }
 }
@@ -536,7 +536,7 @@ async function refreshYouTubeStatus(){
       els.youtubeConnect.textContent = 'CONNECT WITH GOOGLE';
     }
   }catch{
-    els.youtubeStatus.textContent = 'Covenant backend is unavailable.';
+    els.youtubeStatus.textContent = 'Drift backend is unavailable.';
     els.youtubeConnect.href = '#';
   }
 }
@@ -559,7 +559,7 @@ async function refreshContactsStatus(){
       els.contactsConnect.textContent = 'CONNECT WITH GOOGLE';
     }
   }catch{
-    els.contactsStatus.textContent = 'Covenant backend is unavailable.';
+    els.contactsStatus.textContent = 'Drift backend is unavailable.';
     els.contactsConnect.href = '#';
   }
 }
@@ -582,7 +582,7 @@ async function refreshSpotifyStatus(){
       els.spotifyConnect.textContent = 'CONNECT WITH SPOTIFY';
     }
   }catch{
-    els.spotifyStatus.textContent = 'Covenant backend is unavailable.';
+    els.spotifyStatus.textContent = 'Drift backend is unavailable.';
     els.spotifyConnect.href = '#';
   }
 }
@@ -698,9 +698,9 @@ setState('idle', 'STANDBY');
 
 /* ---------------- Transcript ---------------- */
 function addLine(role, text){
-  const roleLabel = role === 'user' ? 'YOU' : 'HERMES';
+  const roleLabel = role === 'user' ? 'YOU' : 'DRIFT';
   els.transcript.innerHTML = `${text}<span class="role">${roleLabel}</span>`;
-  if(role === 'hermes' || role === 'cebri'){
+  if(role === 'drift'){
     exchanges++;
     els.memCount.textContent = exchanges + ' EXCHANGE' + (exchanges===1?'':'S');
   }
@@ -804,7 +804,7 @@ if(SpeechRecognition){
 }
 
 els.micBtn.style.display = 'flex';
-els.micBtn.title = 'Click to wake Covenant and start listening';
+els.micBtn.title = 'Click to wake Drift and start listening';
 els.micBtn.addEventListener('click', ()=>{
   startRecognition();
   armWake();
@@ -829,9 +829,9 @@ if(recognizer){
       const text = result[0].transcript.trim();
       if(!text) continue;
       const lower = text.toLowerCase();
-      const wakeIndex = lower.indexOf('covenant');
+      const wakeIndex = lower.indexOf('drift');
       if(wakeIndex !== -1){
-        const command = text.slice(wakeIndex + 'covenant'.length).replace(/^[,\s]+/, '').trim();
+        const command = text.slice(wakeIndex + 'drift'.length).replace(/^[,\s]+/, '').trim();
         if(command){
           wakeActive = false;
           clearTimeout(wakeTimer);
@@ -901,7 +901,7 @@ async function handleUserMessage(text){
   }
 
   els.latencyLabel.textContent = Math.round(performance.now()-started) + ' MS';
-  addLine('cebri', reply);
+  addLine('drift', reply);
   speak(reply);
 }
 
@@ -909,7 +909,7 @@ function demoReply(text){
   return new Promise(resolve=>{
     setTimeout(()=>{
       const lower = text.toLowerCase();
-      if(lower.includes('hello') || lower.includes('hi')) resolve("Hello! I'm Covenant, your personal AI assistant. Connect an AI provider in the env file for live answers.");
+      if(lower.includes('hello') || lower.includes('hi')) resolve("Hello! I'm Drift, your personal AI assistant. Connect an AI provider in the env file for live answers.");
       else resolve("I'm running in demo mode right now — connect me to your CrewAI backend in Configure to give real answers.");
     }, 700 + Math.random()*500);
   });
@@ -949,7 +949,7 @@ function backendBase(){
 
 function showBrowserConfirmation(url, actionId){
   pendingBrowserAction = { url, actionId };
-  browserConfirmText.textContent = 'Covenant wants to open ' + url + ' in your browser. Allow this action?';
+  browserConfirmText.textContent = 'Drift wants to open ' + url + ' in your browser. Allow this action?';
   browserConfirmModal.classList.add('open');
 }
 
@@ -974,19 +974,19 @@ async function requestBrowserAction(url){
     if(res.status === 202 || data.requires_confirmation){
       showBrowserConfirmation(data.url || url, data.action_id || null);
     } else if(data.opened){
-      addLine('cebri', data.message || ('Opened ' + url + ' in the browser.'));
+      addLine('drift', data.message || ('Opened ' + url + ' in the browser.'));
     } else if(res.status === 400 && (data.requires_confirmation || /confirm/i.test(data.error || ''))){
       // Backend requires explicit confirmation; ask the user locally first.
-      if(window.confirm('Covenant wants to open ' + url + ' in your browser. Allow this action?')){
+      if(window.confirm('Drift wants to open ' + url + ' in your browser. Allow this action?')){
         await confirmBrowserAction(url, null);
       } else {
-        addLine('cebri', 'Browser action cancelled.');
+        addLine('drift', 'Browser action cancelled.');
       }
     } else {
-      addLine('cebri', data.error || data.message || 'Could not complete the browser action.');
+      addLine('drift', data.error || data.message || 'Could not complete the browser action.');
     }
   } catch(err){
-    if(window.confirm('Covenant wants to open ' + url + ' in your browser. Allow this action?')){
+    if(window.confirm('Drift wants to open ' + url + ' in your browser. Allow this action?')){
       window.open(url, '_blank', 'noopener');
     }
   }
@@ -1006,9 +1006,9 @@ async function confirmBrowserAction(url, actionId){
       body: JSON.stringify(body)
     });
     const data = await res.json().catch(() => ({}));
-    addLine('cebri', data.message || (data.opened ? ('Opened ' + (data.url || url) + ' in the browser.') : 'Could not open the browser URL.'));
+    addLine('drift', data.message || (data.opened ? ('Opened ' + (data.url || url) + ' in the browser.') : 'Could not open the browser URL.'));
   } catch(err){
-    addLine('cebri', 'Could not reach the backend for the browser action.');
+    addLine('drift', 'Could not reach the backend for the browser action.');
   }
 }
 
@@ -1020,13 +1020,13 @@ browserConfirmOk.addEventListener('click', async () => {
 });
 browserConfirmCancel.addEventListener('click', () => {
   hideBrowserConfirmation();
-  addLine('cebri', 'Browser action cancelled.');
+  addLine('drift', 'Browser action cancelled.');
 });
 
 // Optional helper for opening any URL only after explicit user confirmation.
 async function openInBrowserWithConfirmation(url){
-  if(!window.confirm('Covenant wants to open ' + url + ' in your browser. Allow this action?')){
-    addLine('cebri', 'Browser action cancelled.');
+  if(!window.confirm('Drift wants to open ' + url + ' in your browser. Allow this action?')){
+    addLine('drift', 'Browser action cancelled.');
     return false;
   }
   await confirmBrowserAction(url, null);
