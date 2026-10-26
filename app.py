@@ -1930,4 +1930,6 @@ if __name__ == "__main__":
         print(f"STARTUP WARNING: {startup_warning}")
         print("Falling back to local mode until the key is fixed.")
     print("Covenant API running at http://localhost:5000/ask")
-    app.run(host="0.0.0.0", port=5000, debug=True, threaded=True, use_reloader=False)
+    port = int(os.getenv("PORT", "5000"))
+    debug = os.getenv("FLASK_DEBUG", "").strip().lower() in {"1", "true", "yes", "on"}
+    app.run(host="0.0.0.0", port=port, debug=debug, threaded=True, use_reloader=False)
